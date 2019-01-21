@@ -33,4 +33,71 @@ Vue.directive('Tooltip', VTooltip)
 
 import View from './views/CollaborationView'
 
+let selectAction = {};
+let icons = {};
+let types = {};
+
+window.Collaboration = {
+	/**
+	 *
+	 * @param type
+	 * @param {callback} selectCallback should return a promise
+	 */
+	registerType(type, typeDefinition) {
+		types[type] = typeDefinition;
+	},
+	trigger(type) {
+		return types[type].action()
+	},
+	getTypes() {
+		return Object.keys(types);
+	},
+	getIcon(type) {
+		return types[type].icon;
+	},
+	getLabel(type) {
+		return t('files_sharing', 'Link to a {label}', { label: types[type].typeString || type }, 1)
+	}
+}
+
+window.Collaboration.registerType('files', {
+	action: () => {
+		return new Promise((resolve, reject) => {
+			OC.dialogs.filepicker('Link to a file', function (f) {
+				const client = OC.Files.getClient();
+				client.getFileInfo(f).then((status, fileInfo) => {
+					resolve(fileInfo.id)
+				}, () => {
+					reject()
+				})
+			}, false);
+		})
+	},
+	icon: 'nav-icon-files',
+	/** used in "Link to a {typeString}" */
+	typeString: 'file'
+});
+
+/* TODO: temporary data for testing */
+window.Collaboration.registerType('calendar', {
+	action: () => {
+		return new Promise((resolve, reject) => {
+			var id = window.prompt("calendar id", "1");
+			resolve(id);
+		})
+	},
+	icon: 'icon-calendar-dark',
+	typeName: 'calendar',
+});
+window.Collaboration.registerType('contact', {
+	action: () => {
+		return new Promise((resolve, reject) => {
+			var id = window.prompt("contacts id", "1");
+			resolve(id);
+		})
+	},
+	icon: 'icon-contacts-dark',
+	typeName: 'contact',
+});
+
 export { Vue, View }

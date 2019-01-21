@@ -81,15 +81,15 @@
 <style scoped lang="scss">
 	.linked-icons {
 		display: flex;
-	span {
-		padding: 16px;
-		display: block;
-		background-repeat: no-repeat;
-		background-position: center;
-		opacity: 0.7;
-	&:hover {
-		 opacity: 1;
-	 }
-	}
+		span {
+			padding: 16px;
+			display: block;
+			background-repeat: no-repeat;
+			background-position: center;
+			opacity: 0.7;
+			&:hover {
+				opacity: 1;
+			}
+		}
 	}
 </style>
