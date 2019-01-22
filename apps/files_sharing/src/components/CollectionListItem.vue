@@ -21,12 +21,13 @@
   -->
 
 <template>
-	<li>
-		<avatar displayName="Design" :allowPlaceholder="true"></avatar>
-		<span class="username" title="">Design</span>
+	<li class="collection-list">
+		<avatar :displayName="collection.name" :allowPlaceholder="true"></avatar>
+		<span class="username" title="">{{ collection.name }}</span>
 		<div class="linked-icons">
-			<a href="" v-tooltip="'Design team calendar'"><span class="icon-calendar-dark"></span></a>
-			<a href="" v-tooltip="'Design projet overview'"><span class="nav-icon-files"></span></a>
+			<transition name="fade">
+				<a v-if="!detailsOpen" v-for="resource in collection.resources" :href="getLink(resource)" v-tooltip="resource.name"><span :class="getIcon(resource)"></span></a>
+			</transition>
 		</div>
 		<span class="sharingOptionsGroup">
 				<div class="share-menu" v-click-outside="close">
@@ -37,6 +38,14 @@
 					</div>
 				</div>
 		</span>
+		<transition name="fade">
+			<ul class="resource-list-details" v-if="detailsOpen" v-click-outside="hideDetails">
+				<li v-for="resource in collection.resources">
+					<a :href="getLink(resource)"><span :class="getIcon(resource)"></span> {{ resource.name }}</a>
+					<span class="icon-delete"></span>
+				</li>
+			</ul>
+		</transition>
 	</li>
 </template>
 
@@ -44,24 +53,48 @@
 	import { Avatar } from 'nextcloud-vue';
 
 	export default {
-		name: 'ResourceListItem',
+		name: 'CollectionListItem',
 		components: {
 			Avatar
 		},
+		props: {
+			collection: {
+				type: Object
+			}
+		},
 		data() {
 			return {
-				isOpen: false
+				isOpen: false,
+				detailsOpen: false
 			}
 		},
 		computed: {
 			menu() {
 				return [
 					{
+						action: () => {
+							this.detailsOpen = true
+							this.isOpen = false
+						},
+						icon: 'icon-info',
+						text: t('files_sharing', 'Details'),
+					},
+					{
+						action: () => {  },
+						icon: 'icon-rename',
+						text: t('files_sharing', 'Rename collection'),
+					},{
 						action: () => {  },
 						icon: 'icon-delete',
 						text: t('files_sharing', 'Remove collection'),
 					}
 				]
+			},
+			getIcon() {
+				return (resource) => [window.Collaboration.getIcon(resource.type)]
+			},
+			getLink() {
+				return (resource) => window.Collaboration.getLink(resource.type, resource.id)
 			}
 		},
 		methods: {
@@ -73,12 +106,22 @@
 			},
 			toggle() {
 				this.isOpen = !this.isOpen
+			},
+			hideDetails() {
+				this.detailsOpen = false
 			}
 		}
 	}
 </script>
 
 <style scoped lang="scss">
+	.fade-enter-active, .fade-leave-active {
+		transition: opacity .3s ease;
+	}
+	.fade-enter, .fade-leave-to
+		/* .fade-leave-active below version 2.1.8 */ {
+		opacity: 0;
+	}
 	.linked-icons {
 		display: flex;
 		span {
@@ -89,6 +132,26 @@
 			opacity: 0.7;
 			&:hover {
 				opacity: 1;
+			}
+		}
+	}
+	.collection-list {
+		flex-wrap: wrap;
+		.resource-list-details {
+			width: 100%;
+			li {
+				display: flex;
+				margin-left: 44px;
+				a {
+					flex-grow: 1;
+					padding: 3px;
+				}
+			}
+			span {
+				display: inline-block;
+				padding: 8px;
+				vertical-align: top;
+				margin-right: 10px;
 			}
 		}
 	}

@@ -57,6 +57,10 @@ window.Collaboration = {
 	},
 	getLabel(type) {
 		return t('files_sharing', 'Link to a {label}', { label: types[type].typeString || type }, 1)
+	},
+	getLink(type, id) {
+		/* TODO: Allow action to be executed instead of href as well */
+		return types[type].link(id);
 	}
 }
 
@@ -73,6 +77,7 @@ window.Collaboration.registerType('files', {
 			}, false);
 		})
 	},
+	link: (id) => OC.generateUrl('/f/') + id,
 	icon: 'nav-icon-files',
 	/** used in "Link to a {typeString}" */
 	typeString: 'file'

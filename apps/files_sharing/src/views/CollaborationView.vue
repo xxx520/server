@@ -1,6 +1,6 @@
 <template>
-	<div>
-		<ul id="shareWithList" class="shareWithList">
+	<div :class="{'icon-loading': !collections}">
+		<ul id="shareWithList" class="shareWithList" v-if="collections">
 			<li @click="showSelect">
 				<div class="avatar"><span class="icon-category-integration icon-white"></span></div>
 				<multiselect v-model="value" :options="options" :placeholder="placeholder" tag-placeholder="Create a new collection" ref="select" @select="select" label="title" track-by="title" :reset-after="true">
@@ -10,18 +10,15 @@
 					</template>
 					<template slot="option" slot-scope="props">
 						<span class="option__wrapper">
-							<span :class="props.option.class" class="avatar"></span>
+							<span v-if="props.option.class" :class="props.option.class" class="avatar"></span>
+							<avatar v-else :displayName="props.option.title" :allowPlaceholder="true"></avatar>
 							<span class="option__title">{{ props.option.title }}</span>
 						</span>
 					</template>
 				</multiselect>
 			</li>
-			<resource-list-item></resource-list-item>
-			<resource-list-item></resource-list-item>
-			<resource-list-item></resource-list-item>
+			<collection-list-item v-for="collection in collections" :collection="collection" :key="collection.id" />
 		</ul>
-		<pre>Vue component file model: {{ this.$root.model.name }} </pre>
-
 	</div>
 </template>
 
@@ -73,14 +70,15 @@
 </style>
 
 <script>
-	import { Multiselect } from 'nextcloud-vue';
-	import ResourceListItem from '../components/ResourceListItem';
+	import { Multiselect, Avatar } from 'nextcloud-vue';
+	import CollectionListItem from '../components/CollectionListItem';
 	import axios from 'nextcloud-axios';
 
 	export default {
 		name: 'CollaborationView',
 		components: {
-			ResourceListItem,
+			CollectionListItem,
+			Avatar,
 			Multiselect: Multiselect,
 		},
 		data() {
@@ -89,12 +87,21 @@
 				generatingCodes: false,
 				codes: undefined,
 				value: null,
-				model: {}
+				model: {},
+				collections: null
 			};
 		},
 		mounted() {
-			axios.get(OC.linkToOCS(`/collaboration/resources/${resourceType}/${resourceId}`)).then((response) => {
-				console.log(response)
+			let resourceId = this.$root.model.id
+			/** TODO move to service */
+			const resourceBase = OC.linkToOCS(`collaboration/resources/files`);
+			axios.get(`${resourceBase}${resourceId}?format=json`, {
+				headers: {
+					'OCS-APIRequest': true,
+					'Content-Type': 'application/json; charset=UTF-8'
+				}
+			}).then((response) => {
+				this.collections = response.data.ocs.data
 			});
 		},
 		computed: {
@@ -112,6 +119,11 @@
 						action: () => window.Collaboration.trigger(types[type])
 					})
 				}
+				for(let index in this.collections) {
+					options.push({
+						title: this.collections[index].name
+					})
+				}
 				return options;
 			}
 		},
@@ -123,6 +135,7 @@
 					console.log('Create a new collection with')
 					console.log('This file ', this.$root.model.id)
 					console.log('Selected resource ', selectedOption.type, id)
+					this.createCollection(this.$root.model.id, selectedOption.type, id)
 				}).catch((e) => {
 					console.error('No resource selected');
 				});
@@ -136,6 +149,35 @@
 			},
 			isVueComponent(object) {
 				return object._isVue
+			},
+			createCollection(resourceIdBase, resourceType, resourceId) {
+				/** TODO move to service */
+				const resourceBase = OC.linkToOCS(`collaboration/resources/files`, 2);
+				axios.post(`${resourceBase}${resourceIdBase}?format=json`, {
+					name: 'Example collection'
+				}, {
+					headers: {
+						'OCS-APIRequest': true,
+						'Content-Type': 'application/json; charset=UTF-8'
+					}
+				}).then((response) => {
+					console.log(response.data.ocs.data)
+				});
+			},
+			addResourceToCollection(collectionId, resourceType, resourceId) {
+				/** TODO move to service */
+				const resourceBase = OC.linkToOCS(`collaboration/resources/collections`, 2);
+				axios.post(`${resourceBase}${collectionId}?format=json`, {
+					resourceType,
+					resourceId
+				}, {
+					headers: {
+						'OCS-APIRequest': true,
+						'Content-Type': 'application/json; charset=UTF-8'
+					}
+				}).then((response) => {
+					console.log(response)
+				});
 			}
 		}
 	}
