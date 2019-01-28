@@ -1,8 +1,7 @@
 <?php
-declare(strict_types=1);
 /**
- * @copyright 2018, Thomas Citharel <tcit@tcit.fr>
- *
+ * @copyright Copyright (c) 2018 Thomas Citharel <tcit@tcit.fr>
+ * 
  * @author Thomas Citharel <tcit@tcit.fr>
  *
  * @license GNU AGPL version 3 or any later version
@@ -22,28 +21,19 @@ declare(strict_types=1);
  *
  */
 
-namespace OCA\DAV\Tests\unit\BackgroundJob;
+namespace OCA\DAV\CalDAV\Reminder\NotificationProvider;
 
-use OCA\DAV\BackgroundJob\EventReminderJob;
-use OCA\DAV\CalDAV\Reminder\ReminderService;
-use Test\TestCase;
+class ProviderDoesNotExistsException extends \Exception {
 
-class EventReminderJobTest extends TestCase {
-
-	/** @var ReminderService */
-	private $reminderService;
-
-	protected function setUp() {
-		parent::setUp();
-
-		$this->reminderService = $this->createMock(ReminderService::class);
-
-		$this->backgroundJob = new EventReminderJob($this->reminderService);
+	/**
+	 * ProviderDoesNotExistsException constructor.
+	 *
+	 * @since 16.0.0
+	 *
+	 * @param string $type ReminderType
+	 */
+	public function __construct(string $type) {
+		parent::__construct("No notification provider for type $type available");
 	}
 
-	public function testRun() {
-		$this->reminderService->expects($this->once())->method('processReminders');
-
-		$this->backgroundJob->run([]);
-	}
 }

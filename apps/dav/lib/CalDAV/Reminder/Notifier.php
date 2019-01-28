@@ -26,12 +26,31 @@ use OCA\DAV\AppInfo\Application;
 use OCP\L10N\IFactory;
 use OCP\Notification\INotification;
 use OCP\Notification\INotifier;
+use OCP\IURLGenerator;
 
 class Notifier implements INotifier {
+
+	public static $units = array(
+        'y' => 'year',
+        'm' => 'month',
+        'd' => 'day',
+        'h' => 'hour',
+        'i' => 'minute',
+        's' => 'second',
+    );
+
+	/** @var IFactory */
 	protected $factory;
 
-	public function __construct(IFactory $factory) {
+	/** @var IURLGenerator */
+	protected $urlGenerator;
+
+	/** @var IL10N */
+	protected $l;
+
+	public function __construct(IFactory $factory, IURLGenerator $urlGenerator) {
 		$this->factory = $factory;
+		$this->urlGenerator = $urlGenerator;
 	}
 
 	/**
@@ -45,22 +64,60 @@ class Notifier implements INotifier {
 		}
 
 		// Read the language from the notification
-		$l = $this->factory->get('dav', $languageCode);
+		$this->l = $this->factory->get('dav', $languageCode);
 
 		if ($notification->getSubject() === 'calendar_reminder') {
-			$subjectParams = $notification->getSubjectParameters();
-			$event_datetime = new \DateTime();
-			$event_datetime->setTimestamp($subjectParams[1]);
-			$notification->setParsedSubject($l->t('Your event "%s" is in %s', [$subjectParams[0], $event_datetime->format('Y-m-d H:i:s')]));
-			$messageParams = $notification->getMessageParameters();
-			if (isset($messageParams[0]) && $messageParams[0] !== '') {
-				$notification->setParsedMessage($messageParams[0]);
-			}
-			// $notification->setIcon($this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath(Application::APP_ID, 'app-dark.svg')));
+			$subjectParameters = $notification->getSubjectParameters();
+			$notification->setParsedSubject($this->processEventTitle($subjectParameters));
+
+			$messageParameters = $notification->getMessageParameters();
+			$notification->setParsedMessage($this->processEventDescription($messageParameters));
+			$notification->setIcon($this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath('core', 'places/calendar.svg')));
 			return $notification;
 		} else {
 			// Unknown subject => Unknown notification => throw
 			throw new \InvalidArgumentException();
 		}
+	}
+
+	/**
+	 * @param int $startDate
+	 * @return string
+	 */
+	private function processEventTitle(array $event)
+	{
+		$event_datetime = new \DateTime();
+		$event_datetime->setTimestamp($event['start']);
+		$now = new \DateTime();
+
+		$diff = $event_datetime->diff($now);
+
+		foreach (self::$units as $attribute => $unit) {
+            $count = $diff->$attribute;
+            if (0 !== $count) {
+                return $this->getPluralizedTitle($count, $diff->invert, $unit, $event['title']);
+            }
+        }
+        return '';
+	}
+
+	/**
+	 * @var int $count
+	 * @var int $invert
+	 * @var string $unit
+	 * @return string
+	 */
+	private function getPluralizedTitle(int $count, int $invert, string $unit, string $title)
+	{
+		if ($invert) {
+			return $this->l->n('%s (in one %s)', '%s (in %s %ss)', $count, [$title, $count, $unit]);
+		}
+		// This should probably not show up
+		return $this->l->t('%s (one %s ago)', '%s (%s %ss ago)', $count, [$title, $unit, $count]);
+	}
+
+	private function processEventDescription(array $event)
+	{
+		return $event['when'] . "<br>" . $event['description'] . "<br>" . $event['location'];
 	}
 }

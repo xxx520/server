@@ -58,10 +58,10 @@ class Version1007Date20181005133326 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 255,
 			]);
-			$table->addColumn('notificationdate', Type::DATETIMETZ, [
+			$table->addColumn('notificationdate', Type::DATETIME, [
 				'notnull' => false,
 			]);
-			$table->addColumn('eventstartdate', Type::DATETIMETZ, [
+			$table->addColumn('eventstartdate', Type::DATETIME, [
 				'notnull' => false,
 			]);
 

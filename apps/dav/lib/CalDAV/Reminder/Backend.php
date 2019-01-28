@@ -85,8 +85,6 @@ class Backend {
 		$principal = explode('/', $calendarData['principaluri']);
 		$owner = array_pop($principal);
 
-		$object = $this->getObjectNameAndType($objectData);
-
 		$users = $this->getUsersForShares($shares);
 		$users[] = $this->userSession->getUser()->getUID();
 
@@ -110,37 +108,12 @@ class Backend {
 								'objecturi' => $query->createNamedParameter($objectData['uri']),
 								'type' => $query->createNamedParameter($type),
 								'notificationdate' => $query->createNamedParameter($time->getTimestamp()),
+								'eventstartdate' => $query->createNamedParameter($vobject->VEVENT->DTSTART->getDateTime()->getTimestamp()),
 							])->execute();
 					}
 				}
 			}
 		}
-	}
-
-	/**
-	 * @param array $objectData
-	 * @return string[]|bool
-	 */
-	protected function getObjectNameAndType(array $objectData)
-	{
-		$vObject = Reader::read($objectData['calendardata']);
-		$component = $componentType = null;
-		foreach($vObject->getComponents() as $component) {
-			if (in_array($component->name, ['VEVENT', 'VTODO'], true)) {
-				$componentType = $component->name;
-				break;
-			}
-		}
-
-		if (!$componentType) {
-			// Calendar objects must have a VEVENT or VTODO component
-			return false;
-		}
-
-		if ($componentType === 'VEVENT') {
-			return ['id' => (string) $component->UID, 'name' => (string) $component->SUMMARY, 'type' => 'event'];
-		}
-		return ['id' => (string) $component->UID, 'name' => (string) $component->SUMMARY, 'type' => 'todo', 'status' => (string) $component->STATUS];
 	}
 
 	/**
@@ -226,38 +199,40 @@ class Backend {
 	 *
 	 * @return array
 	 */
-	public function getReminders(): array
-	{
-		$query = $this->db->getQueryBuilder();
-		$fields = ['id', 'notificationdate'];
-		$result = $query->select($fields)
-			->from('calendar_reminders')
-			->execute();
+	// public function getReminders(): array
+	// {
+	// 	$query = $this->db->getQueryBuilder();
+	// 	$fields = ['id', 'notificationdate'];
+	// 	$result = $query->select($fields)
+	// 		->from('calendar_reminders')
+	// 		->execute();
 
-		$reminders = [];
-		while($row = $result->fetch(\PDO::FETCH_ASSOC)) {
-			$reminder = [
-				'id' => $row['id'],
-				'notificationdate' => $row['notificationdate']
-			];
+	// 	$reminders = [];
+	// 	while($row = $result->fetch(\PDO::FETCH_ASSOC)) {
+	// 		$reminder = [
+	// 			'id' => $row['id'],
+	// 			'notificationdate' => $row['notificationdate']
+	// 		];
 
-			$reminders[] = $reminder;
+	// 		$reminders[] = $reminder;
 
-		}
-		return $reminders;
-	}
+	// 	}
+	// 	return $reminders;
+	// }
 
 	/**
 	 * Get all reminders with a notification date before now
+	 * 
+	 * @return array
 	 */
 	public function getRemindersToProcess()
 	{
 		$query = $this->db->getQueryBuilder();
-		$fields = ['cr.id', 'cr.calendarid', 'objecturi', 'type', 'notificationdate', 'cr.uid', 'calendardata', 'displayname'];
-		$result = $query->select($fields)
+		$fields = ['cr.id', 'cr.calendarid', 'cr.objecturi', 'cr.type', 'cr.notificationdate', 'cr.uid', 'co.calendardata', 'c.displayname'];
+		return $query->select($fields)
 			->from('calendar_reminders', 'cr')
-			->where($query->expr()->gte('cr.notificationdate', $query->createNamedParameter(new DateTime())))
-			->andWhere($query->expr()->lte('cr.eventdate', $query->createNamedParameter(new DateTime()))) # We check that DTSTART isn't before
+			->where($query->expr()->gte('cr.notificationdate', $query->createNamedParameter((new \DateTime())->getTimestamp())))
+			->andWhere($query->expr()->gte('cr.eventstartdate', $query->createNamedParameter((new \DateTime())->getTimestamp()))) # We check that DTSTART isn't before
 			->leftJoin('cr', 'calendars', 'c', $query->expr()->eq('cr.calendarid', 'c.id'))
 			->leftJoin('cr', 'calendarobjects', 'co', $query->expr()->andX($query->expr()->eq('cr.calendarid', 'c.id'), $query->expr()->eq('co.uri', 'cr.objecturi')))
 			->execute();
@@ -269,26 +244,26 @@ class Backend {
 	 * @param integer $id
 	 * @return null|array
 	 */
-	public function getReminder(int $id)
-	{
-		$query = $this->db->getQueryBuilder();
-		$fields = ['cr.id', 'cr.calendarid', 'objecturi', 'type', 'notificationdate', 'cr.uid', 'calendardata', 'displayname'];
-		$result = $query->select($fields)
-			->from('calendar_reminders', 'cr')
-			->where($query->expr()->eq('cr.id', $query->createNamedParameter($id)))
-			->leftJoin('cr', 'calendars', 'c', $query->expr()->eq('cr.calendarid', 'c.id'))
-			->leftJoin('cr', 'calendarobjects', 'co', $query->expr()->andX($query->expr()->eq('cr.calendarid', 'c.id'), $query->expr()->eq('co.uri', 'cr.objecturi')))
-			->setMaxResults(1)
-			->execute();
+	// public function getReminder(int $id)
+	// {
+	// 	$query = $this->db->getQueryBuilder();
+	// 	$fields = ['cr.id', 'cr.calendarid', 'objecturi', 'type', 'notificationdate', 'cr.uid', 'calendardata', 'displayname'];
+	// 	$result = $query->select($fields)
+	// 		->from('calendar_reminders', 'cr')
+	// 		->where($query->expr()->eq('cr.id', $query->createNamedParameter($id)))
+	// 		->leftJoin('cr', 'calendars', 'c', $query->expr()->eq('cr.calendarid', 'c.id'))
+	// 		->leftJoin('cr', 'calendarobjects', 'co', $query->expr()->andX($query->expr()->eq('cr.calendarid', 'c.id'), $query->expr()->eq('co.uri', 'cr.objecturi')))
+	// 		->setMaxResults(1)
+	// 		->execute();
 
-		$stmt = $query->execute();
+	// 	$stmt = $query->execute();
 
-		$row = $stmt->fetch(\PDO::FETCH_ASSOC);
-		$stmt->closeCursor();
-		if ($row === false) {
-			return null;
-		}
+	// 	$row = $stmt->fetch(\PDO::FETCH_ASSOC);
+	// 	$stmt->closeCursor();
+	// 	if ($row === false) {
+	// 		return null;
+	// 	}
 
-		return $row;
-	}
+	// 	return $row;
+	// }
 }
