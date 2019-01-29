@@ -21,11 +21,11 @@
   -->
 
 <template>
-	<li class="collection-list">
+	<li class="collection-list" v-click-outside="hideDetails">
 		<avatar :displayName="collection.name" :allowPlaceholder="true"></avatar>
 		<span class="username" title="" @click="showDetails" v-if="this.newName === ''">{{ collection.name }}</span>
 		<form v-else @submit.prevent="renameCollection">
-			<input type="text"v-model="newName" autocomplete="off" autocapitalize="off">
+			<input type="text" v-model="newName" autocomplete="off" autocapitalize="off">
 			<input type="submit" value="" class="icon-confirm">
 		</form>
 		<transition name="fade">
@@ -44,7 +44,7 @@
 				</div>
 		</span>
 		<transition name="fade">
-			<ul class="resource-list-details" v-if="detailsOpen" v-click-outside="hideDetails">
+			<ul class="resource-list-details" v-if="detailsOpen">
 				<li v-for="resource in collection.resources">
 					<a :href="resource.link"><span :class="getIcon(resource)"></span><span class="resource-name">{{ resource.name || '' }}</span></a>
 					<span class="icon-delete" @click="removeResource(collection, resource)"></span>
@@ -88,13 +88,9 @@
 						text: t('files_sharing', 'Details'),
 					},
 					{
-						action: () => { this.openRename() },
+						action: () => this.openRename(),
 						icon: 'icon-rename',
 						text: t('files_sharing', 'Rename collection'),
-					},{
-						action: () => {  },
-						icon: 'icon-delete',
-						text: t('files_sharing', 'Remove collection'),
 					}
 				]
 			},
@@ -119,17 +115,18 @@
 				this.detailsOpen = false
 			},
 			removeResource(collection, resource) {
-				service.removeResource(collection.id, resource.type, resource.id).then((response) => {
-					this.collection.resources = this.collection.resources.filter(item => !(item.id === resource.id && item.type === resource.type))
+				this.$store.dispatch('removeResource', {
+					collectionId: collection.id, resourceType: resource.type, resourceId: resource.id
 				})
 			},
 			openRename() {
 				this.newName = this.collection.name;
 			},
 			renameCollection() {
-				service.renameCollection(this.collection.id, this.newName).then((response) => {
-					console.log('Renamed collection', response.data.ocs.data)
-					this.collection = response.data.ocs.data
+				this.$store.dispatch('renameCollection', {
+					collectionId: this.collection.id,
+					name: this.newName
+				}).then((collection) => {
 					this.newName = '';
 				});
 			}
@@ -160,13 +157,12 @@
 	}
 	.collection-list {
 		flex-wrap: wrap;
+		height: auto;
 
-		form {
-			display: flex;
-		}
-		.username {
+		form, .username {
 			flex-basis: 10%;
 			flex-grow: 1;
+			display: flex;
 		}
 		.resource-list-details {
 			flex-basis: 100%;

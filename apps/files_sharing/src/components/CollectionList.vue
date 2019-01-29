@@ -93,7 +93,6 @@
 <script>
 	import { Multiselect, Avatar } from 'nextcloud-vue';
 	import CollectionListItem from '../components/CollectionListItem';
-	import axios from 'nextcloud-axios';
 
 	const METHOD_CREATE_COLLECTION = 0;
 	const METHOD_ADD_TO_COLLECTION = 1;
@@ -117,24 +116,19 @@
 				codes: undefined,
 				value: null,
 				model: {},
-				collections: null,
 				searchCollections: []
 			};
 		},
 		mounted() {
-			let resourceId = this.$root.model.id
-			/** TODO move to service */
-			const resourceBase = OC.linkToOCS(`collaboration/resources/${this.type}`);
-			axios.get(`${resourceBase}${resourceId}?format=json`, {
-				headers: {
-					'OCS-APIRequest': true,
-					'Content-Type': 'application/json; charset=UTF-8'
-				}
-			}).then((response) => {
-				this.collections = response.data.ocs.data
-			});
+			this.$store.dispatch('fetchCollectionsByResource', {
+				resourceType: this.type,
+				resourceId: this.$root.model.id
+			})
 		},
 		computed: {
+			collections() {
+				return this.$store.getters.collectionsByResource(this.type, this.$root.model.id)
+			},
 			placeholder() {
 				return t('files_sharing', 'Add to a collection');
 			},
@@ -151,44 +145,43 @@
 					})
 				}
 				for(let index in this.searchCollections) {
-					options.push({
-						method: METHOD_ADD_TO_COLLECTION,
-						title: this.searchCollections[index].name,
-						collectionId: this.searchCollections[index].id
-					})
+					if (this.collections.findIndex((collection) => collection.id === this.searchCollections[index].id) === -1) {
+						options.push({
+							method: METHOD_ADD_TO_COLLECTION,
+							title: this.searchCollections[index].name,
+							collectionId: this.searchCollections[index].id
+						})
+					}
 				}
 				return options;
 			}
-		},
-		created: function() {
 		},
 		methods: {
 			select(selectedOption, id) {
 				if (selectedOption.method === METHOD_CREATE_COLLECTION) {
 					selectedOption.action().then((id) => {
-						console.log('Create a new collection with')
-						console.log('This file ', this.$root.model.id)
-						console.log('Selected resource ', selectedOption.type, id)
-						this.createCollection(this.$root.model.id, selectedOption.type, id)
+						this.$store.dispatch('createCollection', {
+							baseResourceType: this.type,
+							baseResourceId: this.$root.model.id,
+							resourceType: selectedOption.type,
+							resourceId: id,
+							name: this.$root.model.name,
+						})
 					}).catch((e) => {
-						console.error('No resource selected');
+						console.error('No resource selected', e);
 					});
 				}
 
 				if (selectedOption.method === METHOD_ADD_TO_COLLECTION) {
-					this.addResourceToCollection(selectedOption.collectionId, this.type, this.$root.model.id)
+					this.$store.dispatch('addResourceToCollection', {
+						collectionId: selectedOption.collectionId, resourceType: this.type, resourceId: this.$root.model.id
+					})
 				}
 			},
 			search(query) {
-				const searchBase = OC.linkToOCS(`collaboration/resources/collections/search`);
-				axios.get(`${searchBase}%25${query}%25?format=json`, {
-					headers: {
-						'OCS-APIRequest': true,
-						'Content-Type': 'application/json; charset=UTF-8'
-					}
-				}).then((response) => {
-					this.searchCollections = response.data.ocs.data
-				});
+				this.$store.dispatch('search', query).then((collections) => {
+					this.searchCollections = collections
+				})
 			},
 			showSelect() {
 				this.selectIsOpen = true
@@ -199,45 +192,6 @@
 			},
 			isVueComponent(object) {
 				return object._isVue
-			},
-			createCollection(resourceIdBase, resourceType, resourceId) {
-				/** TODO move to service */
-				const resourceBase = OC.linkToOCS(`collaboration/resources/files`, 2);
-				axios.post(`${resourceBase}${resourceIdBase}?format=json`, {
-					name: this.$root.model.name
-				}, {
-					headers: {
-						'OCS-APIRequest': true,
-						'Content-Type': 'application/json; charset=UTF-8'
-					}
-				}).then((response) => {
-					let newCollection = response.data.ocs.data
-					console.log('Add new collection', newCollection)
-					this.collections.push(newCollection)
-					this.addResourceToCollection(newCollection.id, resourceType.toString(), resourceId.toString())
-				});
-			},
-			addResourceToCollection(collectionId, resourceType, resourceId) {
-				resourceId = '' + resourceId;
-				/** TODO move to service */
-				const resourceBase = OC.linkToOCS(`collaboration/resources/collections`, 2);
-				return axios.post(`${resourceBase}${collectionId}?format=json`, {
-					resourceType,
-					resourceId
-				}, {
-					headers: {
-						'OCS-APIRequest': true,
-						'Content-Type': 'application/json; charset=UTF-8'
-					}
-				}).then((response) => {
-					console.log('Add new collection', response.data.ocs.data)
-					let collection = this.collections.find((_item) => _item.id === collectionId)
-					if (collection) {
-						this.collections.find((_item) => _item.id === collectionId).resources = response.data.ocs.data.resources
-					} else {
-						this.collections.push(response.data.ocs.data)
-					}
-				});
 			}
 		}
 	}
