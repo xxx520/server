@@ -31,36 +31,6 @@ Vue.component('PopoverMenu', PopoverMenu)
 Vue.directive('ClickOutside', ClickOutside)
 Vue.directive('Tooltip', VTooltip)
 
-import View from './views/CollaborationView'
-
-let selectAction = {};
-let icons = {};
-let types = {};
-console.log('register types');
-
-/* TODO: temporary data for testing */
-window.OCP.Collaboration.registerType('calendar', {
-	action: () => {
-		return new Promise((resolve, reject) => {
-			var id = window.prompt("calendar id", "1");
-			resolve(id);
-		})
-	},
-	icon: 'icon-calendar-dark',
-	typeString: 'calendar',
-	link: (id) => '#' + id,
-});
-window.OCP.Collaboration.registerType('contact', {
-	action: () => {
-		return new Promise((resolve, reject) => {
-			var id = window.prompt("contacts id", "1");
-			resolve(id);
-		})
-	},
-	icon: 'icon-contacts-dark',
-	link: (id) => '#' + id,
-	/** used in "Link to a {typeString}" */
-	typeString: 'contact'
-});
+import View from './CollaborationView'
 
 export { Vue, View }

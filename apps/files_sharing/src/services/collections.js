@@ -21,30 +21,53 @@
  */
 
 import axios from 'nextcloud-axios';
+import Vuex from 'vuex';
+
+const store = new Vuex.Store({
+	state: {
+		collections: []
+	},
+	mutations: {
+		addCollection (state, collection) {
+			state.collections.push(collection)
+		},
+		removeCollection (state, collection) {
+			state.collections = state.collections.filter(item => item.id !== collection.id)
+		}
+	}
+})
 
 class Service {
 	constructor() {
-		this.service = axios.create();
+		this.http = axios;
+		this.baseUrl = OC.linkToOCS(`collaboration/resources`);
 	}
 
 	listCollection(collectionId) {
-		return this.service.get(`/collaboration/resources/collections/${collectionId}`)
+		return this.http.get(`${this.baseUrl}collections/${collectionId}`)
+	}
+
+	renameCollection(collectionId, collectionName) {
+		const resourceBase = OC.linkToOCS(`collaboration/resources/collections`, 2);
+		return this.http.put(`${resourceBase}${collectionId}?format=json`, {
+			collectionName
+		})
 	}
 
 	addResource(collectionId, resource) {
-		return this.service.post(`/collaboration/resources/collections/${collectionId}`)
+		return this.http.post(`/collections/${collectionId}`)
 	}
 
-	removeResource() {
-		return this.service.post(`/collaboration/resources/collections/${collectionId}`)
+	removeResource(collectionId, resourceType, resourceId) {
+		return this.http.delete(`${this.baseUrl}/collections/${collectionId}`, { params: { resourceType, resourceId } } )
 	}
 
 	createCollectionOnResource(resourceType, resourceId) {
-		return this.service.post(`/collaboration/resources/${resourceType}/${resourceId}`)
+		return this.http.post(`/${resourceType}/${resourceId}`)
 	}
 
 	getCollectionByResource(resourceType, resourceId) {
-		return this.service.get(`/collaboration/resources/${resourceType}/${resourceId}`)
+		return this.http.get(`/${resourceType}/${resourceId}`)
 	}
 
 	getProviders() {
@@ -57,3 +80,4 @@ class Service {
 }
 
 export default new Service;
+export { store };
