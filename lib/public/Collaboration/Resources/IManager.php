@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCP\Collaboration\Resources;
 
+use OCP\IUser;
+
 /**
  * @since 16.0.0
  */
@@ -36,6 +38,15 @@ interface IManager extends IProvider {
 	public function getCollection(int $id): ICollection;
 
 	/**
+	 * @param int $id
+	 * @param IUser|null $user
+	 * @return ICollection
+	 * @throws CollectionException when the collection could not be found
+	 * @since 16.0.0
+	 */
+	public function getCollectionForUser(int $id, ?IUser $user): ICollection;
+
+	/**
 	 * @param string $name
 	 * @return ICollection
 	 * @since 16.0.0
@@ -44,11 +55,22 @@ interface IManager extends IProvider {
 
 
 	/**
+	 * @param ICollection $collection
 	 * @param string $name
 	 * @return ICollection
 	 * @since 16.0.0
 	 */
-	public function renameCollection(int $id, string $name): ICollection;
+	public function renameCollection(ICollection $collection, string $name): ICollection;
+
+	/**
+	 * Can a user/guest access the collection
+	 *
+	 * @param ICollection $collection
+	 * @param IUser|null $user
+	 * @return bool
+	 * @since 16.0.0
+	 */
+	public function canAccessCollection(ICollection $collection, ?IUser $user): bool;
 
 	/**
 	 * @param string $type
@@ -56,7 +78,17 @@ interface IManager extends IProvider {
 	 * @return IResource
 	 * @since 16.0.0
 	 */
-	public function getResource(string $type, string $id): IResource;
+	public function createResource(string $type, string $id): IResource;
+
+	/**
+	 * @param string $type
+	 * @param string $id
+	 * @param IUser|null $user
+	 * @return IResource
+	 * @throws ResourceException
+	 * @since 16.0.0
+	 */
+	public function getResourceForUser(string $type, string $id, ?IUser $user): IResource;
 
 	/**
 	 * @param IProvider $provider
