@@ -51,6 +51,8 @@ class ClientFlowLoginV2Controller extends Controller {
 	/**
 	 * @NoCSRFRequired
 	 * @PublicPage
+	 *
+	 * //TODO: rate limit
 	 */
 	public function poll(string $token): JSONResponse {
 		try {

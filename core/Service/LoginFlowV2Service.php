@@ -90,7 +90,7 @@ class LoginFlowV2Service {
 			throw new LoginFlowV2NotFoundException();
 		}
 
-		return new LoginFlowV2Credentials($user, $server, $appPassword);
+		return new LoginFlowV2Credentials($loginName, $server, $appPassword);
 	}
 
 	public function createTokens(): LoginFlowV2Tokens {
