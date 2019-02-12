@@ -24,22 +24,22 @@ declare(strict_types=1);
 
 namespace OC\Core\Controller;
 
-use OC\Core\Service\LoginFlowNgService;
+use OC\Core\Service\LoginFlowV2Service;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 
-class ClientFlowLoginNgController extends Controller {
+class ClientFlowLoginV2Controller extends Controller {
 
-	/** @var LoginFlowNgService */
+	/** @var LoginFlowV2Service */
 	private $loginFlowNgService;
 	/** @var IURLGenerator */
 	private $urlGenerator;
 
 	public function __construct(string $appName,
 								IRequest $request,
-								LoginFlowNgService $loginFlowNgService,
+								LoginFlowV2Service $loginFlowNgService,
 								IURLGenerator $urlGenerator) {
 		parent::__construct($appName, $request);
 		$this->loginFlowNgService = $loginFlowNgService;
@@ -79,9 +79,9 @@ class ClientFlowLoginNgController extends Controller {
 		$data = [
 			'poll' => [
 				'token' => $tokens->getPollToken(),
-				'endpoint' => $this->urlGenerator->linkToRouteAbsolute('core.ClientFlowLoginNg.poll')
+				'endpoint' => $this->urlGenerator->linkToRouteAbsolute('core.ClientFlowLoginV2.poll')
 			],
-			'login' => $this->urlGenerator->linkToRouteAbsolute('core.ClientFlowLoginNg.landing', ['token' => $tokens->getLoginToken()]),
+			'login' => $this->urlGenerator->linkToRouteAbsolute('core.ClientFlowLoginV2.landing', ['token' => $tokens->getLoginToken()]),
 		];
 
 		return new JSONResponse($data);

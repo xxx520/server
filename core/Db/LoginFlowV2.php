@@ -46,7 +46,7 @@ use OCP\AppFramework\Db\Entity;
  * @method string getAppPassword()
  * @method void setAppPassword(string $appPassword)
  */
-class LoginFlowNg extends Entity {
+class LoginFlowV2 extends Entity {
 	/** @var int */
 	protected $timestamp;
 	/** @var int */

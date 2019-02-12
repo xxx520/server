@@ -24,18 +24,18 @@ declare(strict_types=1);
 
 namespace OC\Core\Service;
 
-use OC\Core\Data\LoginFlowNgTokens;
-use OC\Core\Db\LoginFlowNg;
-use OC\Core\Db\LoginFlowNgMapper;
+use OC\Core\Data\LoginFlowV2Tokens;
+use OC\Core\Db\LoginFlowV2;
+use OC\Core\Db\LoginFlowV2Mapper;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IConfig;
 use OCP\ILogger;
 use OCP\Security\ICrypto;
 use OCP\Security\ISecureRandom;
 
-class LoginFlowNgService {
+class LoginFlowV2Service {
 
-	/** @var LoginFlowNgMapper */
+	/** @var LoginFlowV2Mapper */
 	private $mapper;
 	/** @var ISecureRandom */
 	private $random;
@@ -48,7 +48,7 @@ class LoginFlowNgService {
 	/** @var ILogger */
 	private $logger;
 
-	public function __construct(LoginFlowNgMapper $mapper,
+	public function __construct(LoginFlowV2Mapper $mapper,
 								ISecureRandom $random,
 								ITimeFactory $time,
 								IConfig $config,
@@ -62,8 +62,8 @@ class LoginFlowNgService {
 		$this->logger = $logger;
 	}
 
-	public function createTokens(): LoginFlowNgTokens {
-		$flow = new LoginFlowNg();
+	public function createTokens(): LoginFlowV2Tokens {
+		$flow = new LoginFlowV2();
 		$pollToken = $this->random->generate(128, ISecureRandom::CHAR_DIGITS.ISecureRandom::CHAR_LOWER.ISecureRandom::CHAR_UPPER);
 		$loginToken = $this->random->generate(128, ISecureRandom::CHAR_DIGITS.ISecureRandom::CHAR_LOWER.ISecureRandom::CHAR_UPPER);
 		$flow->setPollToken($this->hashToken($pollToken));
@@ -79,7 +79,7 @@ class LoginFlowNgService {
 
 		$this->mapper->insert($flow);
 
-		return new LoginFlowNgTokens($loginToken, $pollToken);
+		return new LoginFlowV2Tokens($loginToken, $pollToken);
 	}
 
 	private function hashToken(string $token): string {
