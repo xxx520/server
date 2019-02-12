@@ -41,7 +41,7 @@ class Version16000Date20190212081545 extends SimpleMigrationStep {
 		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 
-		$table = $schema->createTable('loginng');
+		$table = $schema->createTable('login_flow_v2');
 		$table->addColumn('id', Type::BIGINT, [
 			'autoincrement' => true,
 			'notnull' => true,
@@ -83,7 +83,7 @@ class Version16000Date20190212081545 extends SimpleMigrationStep {
 			'notnull' => false,
 			'length' => 255,
 		]);
-		$table->addColumn('apppassword', Type::STRING, [
+		$table->addColumn('app_password', Type::STRING, [
 			'notnull' => false,
 			'length' => 1024,
 		]);

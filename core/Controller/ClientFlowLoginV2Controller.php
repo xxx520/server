@@ -24,8 +24,10 @@ declare(strict_types=1);
 
 namespace OC\Core\Controller;
 
+use OC\Core\Exception\LoginFlowV2NotFoundException;
 use OC\Core\Service\LoginFlowV2Service;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -46,8 +48,18 @@ class ClientFlowLoginV2Controller extends Controller {
 		$this->urlGenerator = $urlGenerator;
 	}
 
+	/**
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 */
 	public function poll(string $token): JSONResponse {
+		try {
+			$creds = $this->loginFlowNgService->poll($token);
+		} catch (LoginFlowV2NotFoundException $e) {
+			return new JSONResponse([], Http::STATUS_NOT_FOUND);
+		}
 
+		return new JSONResponse($creds);
 	}
 
 	public function showAuthPickerPage() {

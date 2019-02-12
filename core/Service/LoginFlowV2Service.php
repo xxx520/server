@@ -24,9 +24,12 @@ declare(strict_types=1);
 
 namespace OC\Core\Service;
 
+use OC\Core\Data\LoginFlowV2Credentials;
 use OC\Core\Data\LoginFlowV2Tokens;
 use OC\Core\Db\LoginFlowV2;
 use OC\Core\Db\LoginFlowV2Mapper;
+use OC\Core\Exception\LoginFlowV2NotFoundException;
+use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IConfig;
 use OCP\ILogger;
@@ -60,6 +63,34 @@ class LoginFlowV2Service {
 		$this->config = $config;
 		$this->crypto = $crypto;
 		$this->logger = $logger;
+	}
+
+	public function poll(string $pollToken): LoginFlowV2Credentials {
+		try {
+			$data = $this->mapper->getByPollToken($this->hashToken($pollToken));
+		} catch (DoesNotExistException $e) {
+			throw new LoginFlowV2NotFoundException();
+		}
+
+		$loginName = $data->getLoginName();
+		$server = $data->getServer();
+		$appPassword = $data->getAppPassword();
+
+		if ($loginName === null || $server === null || $appPassword === null) {
+			throw new LoginFlowV2NotFoundException();
+		}
+
+		// Remove the data from the DB
+		$this->mapper->delete($data);
+
+		try {
+			// Decrypt the apptoken
+			$appPassword = $this->crypto->decrypt($appPassword, $pollToken);
+		} catch (\Exception $e) {
+			throw new LoginFlowV2NotFoundException();
+		}
+
+		return new LoginFlowV2Credentials($user, $server, $appPassword);
 	}
 
 	public function createTokens(): LoginFlowV2Tokens {

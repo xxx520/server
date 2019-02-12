@@ -22,26 +22,8 @@ declare(strict_types=1);
  *
  */
 
-namespace OC\Core\Db;
+namespace OC\Core\Exception;
 
-use OCP\AppFramework\Db\QBMapper;
-use OCP\IDBConnection;
+class LoginFlowV2NotFoundException extends \Exception {
 
-class LoginFlowV2Mapper extends QBMapper {
-	public function __construct(IDBConnection $db) {
-		parent::__construct($db, 'login_flow_v2', LoginFlowV2::class);
-	}
-
-	public function getByPollToken(string $pollToken): LoginFlowV2 {
-		$qb = $this->db->getQueryBuilder();
-		$qb->select('*')
-			->from($this->getTableName())
-			->where(
-				$qb->expr()->eq('poll_token', $qb->createNamedParameter($pollToken))
-			);
-
-		//TODO check timestamp
-
-		return $this->findEntity($qb);
-	}
 }

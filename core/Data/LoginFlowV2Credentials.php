@@ -22,26 +22,50 @@ declare(strict_types=1);
  *
  */
 
-namespace OC\Core\Db;
+namespace OC\Core\Data;
 
-use OCP\AppFramework\Db\QBMapper;
-use OCP\IDBConnection;
+class LoginFlowV2Credentials implements \JsonSerializable {
+	/** @var string */
+	private $server;
+	/** @var string */
+	private $loginName;
+	/** @var string */
+	private $appPassword;
 
-class LoginFlowV2Mapper extends QBMapper {
-	public function __construct(IDBConnection $db) {
-		parent::__construct($db, 'login_flow_v2', LoginFlowV2::class);
+	public function __construct(string $server, string $loginName, string $appPassword) {
+		$this->server = $server;
+		$this->loginName = $loginName;
+		$this->appPassword = $appPassword;
 	}
 
-	public function getByPollToken(string $pollToken): LoginFlowV2 {
-		$qb = $this->db->getQueryBuilder();
-		$qb->select('*')
-			->from($this->getTableName())
-			->where(
-				$qb->expr()->eq('poll_token', $qb->createNamedParameter($pollToken))
-			);
-
-		//TODO check timestamp
-
-		return $this->findEntity($qb);
+	/**
+	 * @return string
+	 */
+	public function getServer(): string {
+		return $this->server;
 	}
+
+	/**
+	 * @return string
+	 */
+	public function getLoginName(): string {
+		return $this->loginName;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getAppPassword(): string {
+		return $this->appPassword;
+	}
+
+	public function jsonSerialize(): array {
+		return [
+			'server' => $this->server,
+			'loginName' => $this->loginName,
+			'appPassword' => $this->appPassword,
+		];
+	}
+
+
 }
