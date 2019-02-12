@@ -84,7 +84,7 @@ class Version16000Date20190212081545 extends SimpleMigrationStep {
 			'length' => 255,
 		]);
 		$table->addColumn('apppassword', Type::STRING, [
-			'notnull' => true,
+			'notnull' => false,
 			'length' => 1024,
 		]);
 		$table->addUniqueIndex(['poll_token']);

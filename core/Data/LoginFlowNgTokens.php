@@ -22,26 +22,26 @@ declare(strict_types=1);
  *
  */
 
-namespace OC\Core\Db;
+namespace OC\Core\Data;
 
-use OCP\AppFramework\Db\QBMapper;
-use OCP\IDBConnection;
+class LoginFlowNgTokens {
 
-class LoginFlowNgMapper extends QBMapper {
-	public function __construct(IDBConnection $db) {
-		parent::__construct($db, 'loginng', LoginFlowNg::class);
+	/** @var string */
+	private $loginToken;
+	/** @var string */
+	private $pollToken;
+
+	public function __construct(string $loginToken, string $pollToken) {
+		$this->loginToken = $loginToken;
+		$this->pollToken = $pollToken;
 	}
 
-	public function getByPollToken(string $pollToken): LoginFlowNg {
-		$qb = $this->db->getQueryBuilder();
-		$qb->select('*')
-			->from($this->getTableName())
-			->where(
-				$qb->expr()->eq('poll_token', $qb->createNamedParameter($pollToken))
-			);
+	public function getPollToken(): string {
+		return $this->pollToken;
 
-		//TODO check timestamp
+	}
 
-		return $this->findEntity($qb);
+	public function getLoginToken(): string {
+		return $this->loginToken;
 	}
 }

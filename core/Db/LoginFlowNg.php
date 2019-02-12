@@ -26,9 +26,31 @@ namespace OC\Core\Db;
 
 use OCP\AppFramework\Db\Entity;
 
+/**
+ * @method int getTimestamp()
+ * @method void setTimestamp(int $timestamp)
+ * @method int getStarted()
+ * @method void setStarted(int $started)
+ * @method string getPollToken()
+ * @method void setPollToken(string $token)
+ * @method string getLoginToken()
+ * @method void setLoginToken(string $token)
+ * @method string getPublicKey()
+ * @method void setPublicKey(string $key)
+ * @method string getPrivateKey()
+ * @method void setPrivateKey(string $key)
+ * @method string getLoginName()
+ * @method void setLoginName(string $loginName)
+ * @method string getServer()
+ * @method void setServer(string $server)
+ * @method string getAppPassword()
+ * @method void setAppPassword(string $appPassword)
+ */
 class LoginFlowNg extends Entity {
 	/** @var int */
 	protected $timestamp;
+	/** @var int */
+	protected $started;
 	/** @var string */
 	protected $pollToken;
 	/** @var string */
@@ -46,6 +68,7 @@ class LoginFlowNg extends Entity {
 
 	public function __construct() {
 		$this->addType('timestamp', 'int');
+		$this->addType('started', 'int');
 		$this->addType('pollToken', 'string');
 		$this->addType('loginToken', 'string');
 		$this->addType('publicKey', 'string');
