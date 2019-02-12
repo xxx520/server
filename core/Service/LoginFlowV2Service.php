@@ -85,12 +85,60 @@ class LoginFlowV2Service {
 
 		try {
 			// Decrypt the apptoken
-			$appPassword = $this->crypto->decrypt($appPassword, $pollToken);
+			$privateKey = $this->crypto->decrypt($data->getPrivateKey(), $pollToken);
+			$appPassword = $this->decryptPassword($data->getAppPassword(), $privateKey);
 		} catch (\Exception $e) {
 			throw new LoginFlowV2NotFoundException();
 		}
 
-		return new LoginFlowV2Credentials($loginName, $server, $appPassword);
+		return new LoginFlowV2Credentials($server, $loginName, $appPassword);
+	}
+
+	public function isLoginTokenValid(string $loginToken): bool {
+		try {
+			$this->mapper->getByLoginToken($loginToken);
+			return true;
+		} catch (DoesNotExistException $e) {
+			return false;
+		}
+	}
+
+	/**
+	 * @param string $loginToken
+	 * @return bool returns true if the start was successfull. False if not.
+	 */
+	public function startLoginFlow(string $loginToken) {
+		try {
+			$data = $this->mapper->getByLoginToken($loginToken);
+		} catch (DoesNotExistException $e) {
+			return false;
+		}
+
+		if ($data->getStarted() !== 0) {
+			return false;
+		}
+
+		$data->setStarted(1);
+		$this->mapper->update($data);
+
+		return true;
+	}
+
+	public function flowDone(string $loginToken, string $server, string $loginName, string $appPassword): bool {
+		try {
+			$data = $this->mapper->getByLoginToken($loginToken);
+		} catch (DoesNotExistException $e) {
+			return false;
+		}
+
+		$data->setLoginName($loginName);
+		$data->setServer($server);
+
+		// Properly encrypt
+		$data->setAppPassword($this->encryptPassword($appPassword, $data->getPublicKey()));
+
+		$this->mapper->update($data);
+		return true;
 	}
 
 	public function createTokens(): LoginFlowV2Tokens {
@@ -146,5 +194,19 @@ class LoginFlowV2Service {
 			$errors[] = $error;
 		}
 		$this->logger->critical('Something is wrong with your openssl setup: ' . implode(', ', $errors));
+	}
+
+	private function encryptPassword(string $password, string $publicKey): string {
+		openssl_public_encrypt($password, $encryptedPassword, $publicKey, OPENSSL_PKCS1_OAEP_PADDING);
+		$encryptedPassword = base64_encode($encryptedPassword);
+
+		return $encryptedPassword;
+	}
+
+	private function decryptPassword(string $encryptedPassword, string $privateKey): string {
+		$encryptedPassword = base64_decode($encryptedPassword);
+		openssl_private_decrypt($encryptedPassword, $password, $privateKey, OPENSSL_PKCS1_OAEP_PADDING);
+
+		return $password;
 	}
 }

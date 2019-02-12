@@ -22,39 +22,18 @@ declare(strict_types=1);
  *
  */
 
-namespace OC\Core\Db;
+style('core', 'login/authpicker');
 
-use OCP\AppFramework\Db\QBMapper;
-use OCP\IDBConnection;
+/** @var array $_ */
+/** @var \OCP\IURLGenerator $urlGenerator */
+$urlGenerator = $_['urlGenerator'];
+?>
 
-class LoginFlowV2Mapper extends QBMapper {
-	public function __construct(IDBConnection $db) {
-		parent::__construct($db, 'login_flow_v2', LoginFlowV2::class);
-	}
+<div class="picker-window">
+	<h2><?php p($l->t('Account connected')) ?></h2>
+	<p class="info">
+		<?php print_unescaped($l->t('Your client should now be connected! You can close this window.')) ?>
+	</p>
 
-	public function getByPollToken(string $pollToken): LoginFlowV2 {
-		$qb = $this->db->getQueryBuilder();
-		$qb->select('*')
-			->from($this->getTableName())
-			->where(
-				$qb->expr()->eq('poll_token', $qb->createNamedParameter($pollToken))
-			);
-
-		//TODO check timestamp
-
-		return $this->findEntity($qb);
-	}
-
-	public function getByLoginToken(string $loginToken): LoginFlowV2 {
-		$qb = $this->db->getQueryBuilder();
-		$qb->select('*')
-			->from($this->getTableName())
-			->where(
-				$qb->expr()->eq('login_token', $qb->createNamedParameter($loginToken))
-			);
-
-		//TODO check timestamp
-
-		return $this->findEntity($qb);
-	}
-}
+	<br/>
+</div>
