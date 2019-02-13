@@ -213,6 +213,66 @@ class ShareesAPIController extends OCSController {
 	}
 
 	/**
+	 * @NoAdminRequired
+	 *
+	 * @param string $itemType
+	 * @return DataResponse
+	 * @throws OCSBadRequestException
+	 */
+	public function findRecommended(string $itemType = null, $shareType = null): DataResponse {
+		$shareTypes = [
+			Share::SHARE_TYPE_USER,
+		];
+
+		if ($itemType === null) {
+			throw new OCSBadRequestException('Missing itemType');
+		} elseif ($itemType === 'file' || $itemType === 'folder') {
+			if ($this->shareManager->allowGroupSharing()) {
+				$shareTypes[] = Share::SHARE_TYPE_GROUP;
+			}
+
+			if ($this->isRemoteSharingAllowed($itemType)) {
+				$shareTypes[] = Share::SHARE_TYPE_REMOTE;
+			}
+
+			if ($this->isRemoteGroupSharingAllowed($itemType)) {
+				$shareTypes[] = Share::SHARE_TYPE_REMOTE_GROUP;
+			}
+
+			if ($this->shareManager->shareProviderExists(Share::SHARE_TYPE_EMAIL)) {
+				$shareTypes[] = Share::SHARE_TYPE_EMAIL;
+			}
+
+			if ($this->shareManager->shareProviderExists(Share::SHARE_TYPE_ROOM)) {
+				$shareTypes[] = Share::SHARE_TYPE_ROOM;
+			}
+		} else {
+			$shareTypes[] = Share::SHARE_TYPE_GROUP;
+			$shareTypes[] = Share::SHARE_TYPE_EMAIL;
+		}
+
+		// FIXME: DI
+		if (\OC::$server->getAppManager()->isEnabledForUser('circles') && class_exists('\OCA\Circles\ShareByCircleProvider')) {
+			$shareTypes[] = Share::SHARE_TYPE_CIRCLE;
+		}
+
+		if (isset($_GET['shareType']) && is_array($_GET['shareType'])) {
+			$shareTypes = array_intersect($shareTypes, $_GET['shareType']);
+			sort($shareTypes);
+		} else if (is_numeric($shareType)) {
+			$shareTypes = array_intersect($shareTypes, [(int) $shareType]);
+			sort($shareTypes);
+		}
+
+		$result = $this->result;
+
+		$this->shareWithGroupOnly = $this->config->getAppValue('core', 'shareapi_only_share_with_group_members', 'no') === 'yes';
+		$this->shareeEnumeration = $this->config->getAppValue('core', 'shareapi_allow_share_dialog_user_enumeration', 'yes') === 'yes';
+
+		return new DataResponse($result);
+	}
+
+	/**
 	 * Method to get out the static call for better testing
 	 *
 	 * @param string $itemType
