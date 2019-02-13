@@ -521,8 +521,8 @@
 
 						var exactUsers   = result.ocs.data.exact.users;
 						var exactGroups  = result.ocs.data.exact.groups;
-						var exactRemotes = result.ocs.data.exact.remotes;
-						var exactRemoteGroups = result.ocs.data.exact.remote_groups;
+						var exactRemotes = result.ocs.data.exact.remotes || [];
+						var exactRemoteGroups = result.ocs.data.exact.remote_groups || [];
 						var exactEmails = [];
 						if (typeof(result.ocs.data.emails) !== 'undefined') {
 							exactEmails = result.ocs.data.exact.emails;
@@ -537,6 +537,7 @@
 						}
 
 						var exactMatches = exactUsers.concat(exactGroups).concat(exactRemotes).concat(exactRemoteGroups).concat(exactEmails).concat(exactCircles).concat(exactRooms);
+						console.debug(exactUsers, exactGroups, exactRemotes, exactRemoteGroups, exactEmails, exactCircles, exactRooms);
 
 						filter(
 							result.ocs.data.users,
@@ -550,9 +551,9 @@
 
 						var users   = result.ocs.data.users;
 						var groups  = result.ocs.data.groups;
-						var remotes = result.ocs.data.remotes;
-						var remoteGroups = result.ocs.data.remote_groups;
-						var lookup = result.ocs.data.lookup;
+						var remotes = result.ocs.data.remotes || [];
+						var remoteGroups = result.ocs.data.remote_groups || [];
+						var lookup = result.ocs.data.lookup || [];
 						var emails = [];
 						if (typeof(result.ocs.data.emails) !== 'undefined') {
 							emails = result.ocs.data.emails;
@@ -638,6 +639,7 @@
 
 		recommendationHandler: function (response) {
 			var view = this;
+			var $shareWithField = $('.shareWithField');
 			this._getRecommendations(
 				view.model
 			).done(function(suggestions, exactMatches) {
