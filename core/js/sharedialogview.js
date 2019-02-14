@@ -537,7 +537,6 @@
 						}
 
 						var exactMatches = exactUsers.concat(exactGroups).concat(exactRemotes).concat(exactRemoteGroups).concat(exactEmails).concat(exactCircles).concat(exactRooms);
-						console.debug(exactUsers, exactGroups, exactRemotes, exactRemoteGroups, exactEmails, exactCircles, exactRooms);
 
 						filter(
 							result.ocs.data.users,
