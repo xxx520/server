@@ -245,7 +245,7 @@ class ShareesAPIController extends OCSController {
 			$offset
 		))) {
 			foreach ($page as $share) {
-				yield [$share->getSharedWith(), $share->getSharedWithDisplayName()];
+				yield [$share->getSharedWith(), $share->getSharedWithDisplayName() ?? $share->getSharedWith()];
 			}
 
 			$offset += $pageSize;
